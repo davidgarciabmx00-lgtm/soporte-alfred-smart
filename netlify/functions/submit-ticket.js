@@ -3,7 +3,7 @@
 const nodemailer = require('nodemailer');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const cloudinary = require('cloudinary').v2;
-const formidable = require('formidable');
+const { formidable } = require('formidable');
 
 // --- CONFIGURACIÓN (desde variables de entorno en Netlify) ---
 cloudinary.config({
