@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estado de mi Ticket - Alfred Smart</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Consultar Estado de Ticket</h1>
+        <nav>
+            <a href="index.html">Reportar Incidencia</a>
+            <a href="dashboard.html">Ver mi Ticket</a>
+            <a href="manuales.html">Manuales</a>
+            <a href="faq.html">Preguntas Frecuentes</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Consulta el Estado de tu Reporte</h2>
+        <p>Ingresa tu correo electrónico y el número de ticket que recibiste al momento de reportar.</p>
+        
+        <form id="status-form">
+            <label for="email">Correo Electrónico:</label>
+            <input type="email" id="email" required>
+            
+            <label for="ticket-id">Número de Ticket:</label>
+            <input type="text" id="ticket-id" placeholder="Ej: ALF-20231027-1530" required>
+            
+            <button type="submit">Consultar</button>
+        </form>
+
+        <div id="ticket-status" style="margin-top: 20px;"></div>
+    </main>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
