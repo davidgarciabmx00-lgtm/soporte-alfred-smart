@@ -58,11 +58,14 @@ exports.handler = async (event, context) => {
         if (files.adjuntos) {
             const fileArray = Array.isArray(files.adjuntos) ? files.adjuntos : [files.adjuntos];
             for (const file of fileArray) {
-                try {
-                    const result = await cloudinary.uploader.upload(file.filepath, { resource_type: 'auto' });
-                    attachmentUrls.push(result.secure_url);
-                } catch (uploadError) {
-                    console.error("Error subiendo archivo a Cloudinary:", uploadError);
+                // --- MEJORA: Solo subimos el archivo si su tamaño es mayor que 0 ---
+                if (file && file.size > 0) {
+                    try {
+                        const result = await cloudinary.uploader.upload(file.filepath, { resource_type: 'auto' });
+                        attachmentUrls.push(result.secure_url);
+                    } catch (uploadError) {
+                        console.error("Error subiendo archivo a Cloudinary:", uploadError);
+                    }
                 }
             }
         }
