@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const cloudinary = require('cloudinary').v2;
 const { formidable } = require('formidable');
+const { Readable } = require('stream'); // Importamos la clase Readable
 
 // --- CONFIGURACIÓN (desde variables de entorno en Netlify) ---
 cloudinary.config({
@@ -24,25 +25,22 @@ const creds = JSON.parse(process.env.GOOGLE_SHEET_CREDENTIALS);
 
 // --- FUNCIÓN PRINCIPAL ---
 exports.handler = async (event, context) => {
-    // --- SOLUCIÓN AL ERROR: Crear un objeto de petición falso para formidable ---
     const form = formidable({ multiples: true });
     
+    // --- SOLUCIÓN DEFINITIVA: Crear un stream de datos para formidable ---
     // Netlify envía el body como un string codificado en Base64.
-    // Lo decodificamos a un Buffer, que es lo que formidable espera.
     const bodyBuffer = Buffer.from(event.body, 'base64');
 
-    // Creamos un objeto de petición que formidable pueda entender.
-    const mockRequest = {
-        headers: event.headers,
-        body: bodyBuffer,
-    };
+    // Creamos un stream de lectura a partir del buffer. Esto es lo que formidable necesita.
+    const stream = Readable.from(bodyBuffer);
+    // Le añadimos los headers de la petición original para que formidable sepa cómo interpretar los datos.
+    stream.headers = event.headers;
 
     try {
-        // Ahora parseamos el mockRequest en lugar del 'event'
-        const [fields, files] = await form.parse(mockRequest);
+        // Ahora parseamos el stream, que es el formato correcto.
+        const [fields, files] = await form.parse(stream);
 
-        // --- El resto del código sigue igual, pero accedemos a los campos correctamente ---
-        // Los campos vienen como arrays, así que tomamos el primer valor.
+        // --- El resto del código sigue igual ---
         const email = Array.isArray(fields.email) ? fields.email[0] : fields.email;
         const nombre = Array.isArray(fields.nombre) ? fields.nombre[0] : fields.nombre;
         const telefono = Array.isArray(fields.telefono) ? fields.telefono[0] : fields.telefono;
