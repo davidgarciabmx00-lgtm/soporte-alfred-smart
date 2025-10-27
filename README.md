@@ -1,9 +1,3 @@
-
-
-¡Por supuesto! Es una excelente idea tener un documento que resuma todo el trabajo. Aquí tienes una documentación técnica completa del proyecto, explicando las herramientas que utiliza y su funcionamiento.
-
----
-
 ### **Documentación Técnica - Sistema de Soporte Alfred Smart**
 
 #### **1. Introducción**
