@@ -15,8 +15,8 @@ cloudinary.config({
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.GMAIL_USER, // Tu correo de servicio o Gmail
-        pass: process.env.GMAIL_PASS, // Tu contraseña de aplicación
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
     },
 });
 
@@ -24,39 +24,25 @@ const creds = JSON.parse(process.env.GOOGLE_SHEET_CREDENTIALS);
 
 // --- FUNCIÓN PRINCIPAL ---
 exports.handler = async (event, context) => {
-    // formidable necesita un parser para el cuerpo de la petición
+    // --- SOLUCIÓN AL ERROR: Crear un objeto de petición falso para formidable ---
     const form = formidable({ multiples: true });
     
+    // Netlify envía el body como un string codificado en Base64.
+    // Lo decodificamos a un Buffer, que es lo que formidable espera.
+    const bodyBuffer = Buffer.from(event.body, 'base64');
+
+    // Creamos un objeto de petición que formidable pueda entender.
+    const mockRequest = {
+        headers: event.headers,
+        body: bodyBuffer,
+    };
+
     try {
-        // Parseamos el formulario para obtener los campos y los archivos
-        const [fields, files] = await form.parse(event);
+        // Ahora parseamos el mockRequest en lugar del 'event'
+        const [fields, files] = await form.parse(mockRequest);
 
-        // --- 1. SUBIR ARCHIVOS A CLOUDINARY ---
-        let attachmentUrls = [];
-        if (files.adjuntos) {
-            // Aseguramos que siempre trabajemos con un array
-            const fileArray = Array.isArray(files.adjuntos) ? files.adjuntos : [files.adjuntos];
-            for (const file of fileArray) {
-                try {
-                    const result = await cloudinary.uploader.upload(file.filepath, { resource_type: 'auto' });
-                    attachmentUrls.push(result.secure_url);
-                } catch (uploadError) {
-                    console.error("Error subiendo archivo a Cloudinary:", uploadError);
-                }
-            }
-        }
-
-        // --- 2. GENERAR ID DE TICKET ÚNICO ---
-        const now = new Date();
-        const ticketId = `ALF-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
-
-        // --- 3. GUARDAR EN GOOGLE SHEET ---
-        const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
-        await doc.useServiceAccountAuth(creds);
-        await doc.loadInfo();
-        const sheet = doc.sheetsByIndex[0];
-
-        // Los campos de 'formidable' vienen como arrays, tomamos el primer valor
+        // --- El resto del código sigue igual, pero accedemos a los campos correctamente ---
+        // Los campos vienen como arrays, así que tomamos el primer valor.
         const email = Array.isArray(fields.email) ? fields.email[0] : fields.email;
         const nombre = Array.isArray(fields.nombre) ? fields.nombre[0] : fields.nombre;
         const telefono = Array.isArray(fields.telefono) ? fields.telefono[0] : fields.telefono;
@@ -68,6 +54,30 @@ exports.handler = async (event, context) => {
         const subcategoria = Array.isArray(fields.subcategoria) ? fields.subcategoria[0] : fields.subcategoria;
         const estadoDispositivo = Array.isArray(fields['estado-dispositivo']) ? fields['estado-dispositivo'][0] : fields['estado-dispositivo'];
         const descripcion = Array.isArray(fields.descripcion) ? fields.descripcion[0] : fields.descripcion;
+
+        // 1. SUBIR ARCHIVOS A CLOUDINARY
+        let attachmentUrls = [];
+        if (files.adjuntos) {
+            const fileArray = Array.isArray(files.adjuntos) ? files.adjuntos : [files.adjuntos];
+            for (const file of fileArray) {
+                try {
+                    const result = await cloudinary.uploader.upload(file.filepath, { resource_type: 'auto' });
+                    attachmentUrls.push(result.secure_url);
+                } catch (uploadError) {
+                    console.error("Error subiendo archivo a Cloudinary:", uploadError);
+                }
+            }
+        }
+
+        // 2. GENERAR ID DE TICKET ÚNICO
+        const now = new Date();
+        const ticketId = `ALF-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+
+        // 3. GUARDAR EN GOOGLE SHEET
+        const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID);
+        await doc.useServiceAccountAuth(creds);
+        await doc.loadInfo();
+        const sheet = doc.sheetsByIndex[0];
 
         const newRow = {
             'ID Ticket': ticketId,
@@ -87,7 +97,7 @@ exports.handler = async (event, context) => {
         };
         await sheet.addRow(newRow);
 
-        // --- 4. ENVIAR CORREOS ---
+        // 4. ENVIAR CORREO DE CONFIRMACIÓN AL USUARIO
         const mailToUser = {
             from: `"Soporte Alfred Smart" <${process.env.GMAIL_USER}>`,
             to: email,
@@ -101,7 +111,7 @@ exports.handler = async (event, context) => {
         };
         await transporter.sendMail(mailToUser);
 
-        // --- 5. RESPONDER AL FRONTEND ---
+        // 5. RESPONDER AL FRONTEND
         return {
             statusCode: 200,
             body: JSON.stringify({ message: 'Ticket created successfully', ticketId: ticketId }),
