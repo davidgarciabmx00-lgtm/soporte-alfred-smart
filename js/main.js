@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- 2. LÓGICA DE ENVÍO DEL FORMULARIO ---
+    // --- 2. LÓGICA DE ENVÍO DEL FORMULARIO (MEJORADA) ---
 
     const form = document.getElementById('incident-form');
     const statusDiv = document.getElementById('form-status');
@@ -62,18 +62,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: formData, // Enviamos el objeto FormData directamente
             });
 
-            const result = await response.json(); // La respuesta del backend vendrá en formato JSON
-
+            // --- MEJORA CLAVE ---
+            // Verificamos si la respuesta del servidor fue exitosa (código 200-299)
             if (response.ok) {
-                // Si todo fue bien, mostramos el mensaje de éxito con el número de ticket
+                // Si fue exitosa, intentamos parsear el JSON
+                const result = await response.json();
                 statusDiv.innerHTML = `<strong>¡Reporte enviado con éxito!</strong><br>Tu número de ticket es: <strong>${result.ticketId}</strong><br>Recibirás una confirmación por correo.`;
                 form.reset(); // Limpiamos el formulario
                 subcategoriaContainer.style.display = 'none'; // Ocultamos subcategorías
             } else {
-                // Si hubo un error, lo mostramos
-                throw new Error(result.error || 'Error al enviar el reporte.');
+                // Si hubo un error (400, 500, etc.), leemos el cuerpo de la respuesta como TEXTO
+                const errorText = await response.text();
+                // Y lanzamos un nuevo error con ese mensaje
+                throw new Error(errorText || 'Error al enviar el reporte.');
             }
         } catch (error) {
+            // Ahora este bloque mostrará el error real del servidor
             statusDiv.textContent = `Hubo un problema: ${error.message}`;
             console.error('Error:', error);
         }
