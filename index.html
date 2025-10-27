@@ -1,0 +1,45 @@
+<!-- ... (header y nav) ... -->
+<main>
+    <form id="incident-form" enctype="multipart/form-data">
+        <h2>Reportar una Incidencia o Solicitud</h2>
+        
+        <!-- ... (fieldset de Datos de Contacto) ... -->
+
+        <!-- Detalles de la Incidencia MEJORADOS -->
+        <fieldset>
+            <legend>Detalles de la Incidencia</legend>
+            <label for="prioridad">Nivel de Prioridad:*</label>
+            <select id="prioridad" name="prioridad" required>
+                <option value="bajo">Bajo</option>
+                <option value="medio">Medio</option>
+                <option value="alto">Alto (Urgente)</option>
+            </select>
+
+            <label for="dispositivo">Dispositivo o Sistema con Problemas:*</label>
+            <select id="dispositivo" name="dispositivo" required>
+                <option value="">Selecciona un dispositivo</option>
+                <option value="Clima">Clima</option>
+                <option value="Persianas">Persianas</option>
+                <option value="Iluminación">Iluminación</option>
+                <option value="Accesos">Accesos</option>
+                <!-- ... otros ... -->
+            </select>
+
+            <!-- Subcategoría (se mostrará dinámicamente) -->
+            <div id="subcategoria-container" style="display:none;">
+                <label for="subcategoria">Especifica el problema:*</label>
+                <select id="subcategoria" name="subcategoria"></select>
+            </div>
+
+            <!-- ... (resto de campos: estado-dispositivo, descripción) ... -->
+
+            <!-- Nuevo campo para adjuntar archivos -->
+            <label for="adjuntos">Adjuntar Imágenes o Videos (máx. 5MB):</label>
+            <input type="file" id="adjuntos" name="adjuntos" accept="image/*,video/*" multiple>
+        </fieldset>
+
+        <button type="submit">Enviar Reporte</button>
+    </form>
+    <div id="form-status"></div>
+</main>
+<script src="js/main.js"></script>
