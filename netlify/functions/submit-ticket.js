@@ -25,7 +25,7 @@ const creds = JSON.parse(process.env.GOOGLE_SHEET_CREDENTIALS);
 
 // --- FUNCIÓN PRINCIPAL ---
 exports.handler = async (event, context) => {
-    const form = formidable({ multiples: true, allowEmptyFiles: true });
+    const form = formidable({ multiples: true, allowEmptyFiles: true, minFileSize: 0 });
     
     // --- SOLUCIÓN DEFINITIVA: Crear un stream de datos para formidable ---
     // Netlify envía el body como un string codificado en Base64.
