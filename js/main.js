@@ -42,26 +42,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- 2. LÓGICA DE ENVÍO DEL FORMULARIO (MEJORADA) ---
 
-    const form = document.getElementById('incident-form');
-    const statusDiv = document.getElementById('form-status');
+  // --- 2. LÓGICA DE ENVÍO DEL FORMULARIO (MEJORADA) ---
 
-    form.addEventListener('submit', async function (e) {
-        // Prevenimos el comportamiento por defecto del formulario (recargar la página)
-        e.preventDefault();
-        statusDiv.textContent = 'Enviando reporte...';
+const form = document.getElementById('incident-form');
+const statusDiv = document.getElementById('form-status');
 
-        // FormData es un objeto especial que puede manejar tanto campos de texto como archivos.
-        const formData = new FormData(form);
+form.addEventListener('submit', async function (e) {
+    // Prevenimos el comportamiento por defecto del formulario (recargar la página)
+    e.preventDefault();
+    
+    // Mostramos el div y el mensaje de carga
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'alert alert-info'; // Usamos clases de Bootstrap
+    statusDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando reporte...';
 
-        try {
-            // Hacemos una petición POST a nuestra función serverless en Netlify
-            const response = await fetch('/.netlify/functions/submit-ticket', {
-                method: 'POST',
-                body: formData, // Enviamos el objeto FormData directamente
-            });
+    const formData = new FormData(form);
 
+    try {
+        const response = await fetch('/.netlify/functions/submit-ticket', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            // Mensaje de éxito
+            statusDiv.className = 'alert alert-success';
+            statusDiv.innerHTML = `
+                <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> ¡Reporte enviado con éxito!</h4>
+                <p class="mb-0">Tu número de ticket es: <strong>${result.ticketId}</strong></p>
+                <hr>
+                <p class="mb-0">Recibirás una confirmación por correo en breve.</p>
+            `;
+            form.reset();
+            subcategoriaContainer.style.display = 'none';
+        } else {
+            const errorText = await response.text();
+            // Mensaje de error
+            statusDiv.className = 'alert alert-danger';
+            statusDiv.innerHTML = `<i class="bi bi-x-circle-fill"></i> Hubo un problema: ${errorText}`;
+        }
+    } catch (error) {
+        // Mensaje de error de red
+        statusDiv.className = 'alert alert-danger';
+        statusDiv.innerHTML = `<i class="bi bi-x-circle-fill"></i> Hubo un problema de conexión. Inténtalo de nuevo.`;
+        console.error('Error:', error);
+    }
+});
             // --- MEJORA CLAVE ---
             // Verificamos si la respuesta del servidor fue exitosa (código 200-299)
             if (response.ok) {
