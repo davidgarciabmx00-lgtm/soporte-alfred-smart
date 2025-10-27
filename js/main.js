@@ -1,0 +1,81 @@
+// js/main.js
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- 1. LÓGICA DE SUBCATEGORÍAS ---
+
+    // Obtenemos los elementos del DOM que necesitamos manipular
+    const dispositivoSelect = document.getElementById('dispositivo');
+    const subcategoriaContainer = document.getElementById('subcategoria-container');
+    const subcategoriaSelect = document.getElementById('subcategoria');
+
+    // Este objeto actúa como una pequeña base de datos de subcategorías.
+    // Puedes añadir más opciones aquí fácilmente.
+    const subcategorias = {
+        'Clima': ['No enfría', 'No calienta', 'Fuga de agua', 'Ruidos extraños', 'No responde a la app'],
+        'Persianas': ['No sube/baja', 'Atascada a mitad de camino', 'Hace ruido', 'No responde a la app'],
+        'Iluminación': ['Parpadea', 'No enciende', 'Cambia de color sola', 'No responde a la app'],
+        'Accesos': ['Llave/código no funciona', 'Cerradura atascada', 'Problema con lector biométrico', 'Batería baja'],
+        'Datos de Consumo': ['Datos incorrectos', 'No se actualizan', 'Sensor dañado'],
+        'Reservas de Espacios': ['No puedo reservar', 'Reserva no aparece', 'Error en el calendario'],
+        'Otros': [] // Para 'Otros', no mostraremos subcategorías predefinidas
+    };
+
+    // Añadimos un "escuchador" de eventos. Cuando el usuario cambie la selección del dispositivo...
+    dispositivoSelect.addEventListener('change', () => {
+        const selectedDevice = dispositivoSelect.value;
+        // Limpiamos las opciones anteriores
+        subcategoriaSelect.innerHTML = '<option value="">Selecciona...</option>';
+
+        // Si el dispositivo seleccionado tiene subcategorías en nuestro objeto...
+        if (subcategorias[selectedDevice]) {
+            subcategorias[selectedDevice].forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = sub;
+                subcategoriaSelect.appendChild(option);
+            });
+            // Mostramos el contenedor de la subcategoría
+            subcategoriaContainer.style.display = 'block';
+        } else {
+            // Si no, lo ocultamos
+            subcategoriaContainer.style.display = 'none';
+        }
+    });
+
+    // --- 2. LÓGICA DE ENVÍO DEL FORMULARIO ---
+
+    const form = document.getElementById('incident-form');
+    const statusDiv = document.getElementById('form-status');
+
+    form.addEventListener('submit', async function (e) {
+        // Prevenimos el comportamiento por defecto del formulario (recargar la página)
+        e.preventDefault();
+        statusDiv.textContent = 'Enviando reporte...';
+
+        // FormData es un objeto especial que puede manejar tanto campos de texto como archivos.
+        const formData = new FormData(form);
+
+        try {
+            // Hacemos una petición POST a nuestra función serverless en Netlify
+            const response = await fetch('/.netlify/functions/submit-ticket', {
+                method: 'POST',
+                body: formData, // Enviamos el objeto FormData directamente
+            });
+
+            const result = await response.json(); // La respuesta del backend vendrá en formato JSON
+
+            if (response.ok) {
+                // Si todo fue bien, mostramos el mensaje de éxito con el número de ticket
+                statusDiv.innerHTML = `<strong>¡Reporte enviado con éxito!</strong><br>Tu número de ticket es: <strong>${result.ticketId}</strong><br>Recibirás una confirmación por correo.`;
+                form.reset(); // Limpiamos el formulario
+                subcategoriaContainer.style.display = 'none'; // Ocultamos subcategorías
+            } else {
+                // Si hubo un error, lo mostramos
+                throw new Error(result.error || 'Error al enviar el reporte.');
+            }
+        } catch (error) {
+            statusDiv.textContent = `Hubo un problema: ${error.message}`;
+            console.error('Error:', error);
+        }
+    });
+});
